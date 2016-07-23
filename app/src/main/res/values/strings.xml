@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ADAS</string>
+    <string name="Buttontest">test button</string>
 </resources>
