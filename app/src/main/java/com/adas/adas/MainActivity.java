@@ -1,6 +1,5 @@
 package com.adas.adas;
 
-
 import android.content.Context;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
@@ -10,8 +9,6 @@ import android.view.SurfaceView;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-
-
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
@@ -44,9 +41,9 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity implements CvCameraViewListener2 {
 
-    // Member variables
+
     private static final String     TAG = "ADAS";
-    private static final int        VIEW_MODE_LINES = 1;
+
     private double				    angle = 0;
     private Mat					    lines;
     private float                   mRelativeFaceSize   = 0.2f;
@@ -55,10 +52,60 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     private Mat                     mIntermediateMat;
     private File                    mCascadeFile;
     private Rect                    mRoi;
-    private CascadeClassifier       mJavaDetector;
-    private int                     mAbsoluteFaceSize   = 0;
-    private static final int	    VIEW_MODE_OBJECT = 2;
 
+    // Cascade Classifier variables for each xml file
+    private CascadeClassifier       carDetector;
+    private CascadeClassifier       faceDetector;
+    private CascadeClassifier       eyesDetector;
+    private CascadeClassifier       fullBodyDetector;
+    private CascadeClassifier       stopSignDetector;
+    private int                     mAbsoluteFaceSize   = 0;
+
+    // boolean variables for settings menu
+    private boolean laneDetection = false;
+    private boolean vehicleDetection = false;
+    private boolean faceDetection = false;
+    private boolean eyesDetection = false;
+    private boolean fullBodyDetection = false;
+
+    // returns cascade classifier by retrieving the xml file and writing it into internal memory
+    // stored in resources under file name raw
+    public CascadeClassifier loadFile(CascadeClassifier varDetector, String filename, int fileRawInt){
+        try {
+            // load cascade file from application resources
+            InputStream is = getResources().openRawResource(fileRawInt);
+            File cascadeDir = getDir("cascade", Context.MODE_PRIVATE);
+            mCascadeFile = new File(cascadeDir, filename);
+            FileOutputStream os = new FileOutputStream(mCascadeFile);
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+            is.close();
+            os.close();
+
+            varDetector = new CascadeClassifier(mCascadeFile.getAbsolutePath());
+            varDetector.load(mCascadeFile.getAbsolutePath());
+
+            if (varDetector.empty()) {
+                Log.e(TAG, "Failed to load " + filename);
+                varDetector = null;
+            }else{
+                Log.e(TAG, "Load of " + filename + "success");
+            }
+
+            cascadeDir.delete();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            Log.e(TAG, "Failed to load cascade" + filename +". Exception thrown: " + e);
+        }
+
+        return varDetector;
+
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -78,12 +125,15 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
                 checkItem(item);
                 return true;
             case R.id.vehicle_detection:
+                vehicleDetection = true;
                 checkItem(item);
                 return true;
             case R.id.lane_detection:
+                laneDetection = true;
                 checkItem(item);
                 return true;
             case R.id.people_detection:
+                faceDetection = true;
                 checkItem(item);
                 return true;
             case R.id.color_conversion:
@@ -104,50 +154,19 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this){
 
-
-
-
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
                 {
                     Log.i(TAG, "OpenCV loaded successfully");
-                    // reads the xml file for vehicle detection and loads
-                    // the file into the cascade classier called mJavaDetector
-                    try {
-                        // load cascade file from application resources
-                        InputStream is = getResources().openRawResource(R.raw.cars3);
-                        File cascadeDir = getDir("cascade", Context.MODE_PRIVATE);
-                        mCascadeFile = new File(cascadeDir, "cars3.xml");
-                        FileOutputStream os = new FileOutputStream(mCascadeFile);
 
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = is.read(buffer)) != -1) {
-                            os.write(buffer, 0, bytesRead);
-                        }
-                        is.close();
-                        os.close();
-
-                        mJavaDetector = new CascadeClassifier(mCascadeFile.getAbsolutePath());
-                        mJavaDetector.load(mCascadeFile.getAbsolutePath());
-
-                        if (mJavaDetector.empty()) {
-                            Log.e(TAG, "Failed to load cars3.xml");
-                            mJavaDetector = null;
-                        }else{
-                            Log.e(TAG, "Load of cars3.xml success");
-                        }
-
-                        cascadeDir.delete();
-                    }
-                    catch (IOException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "Failed to load cascade. Exception thrown: " + e);
-                    }
-
+                    carDetector = loadFile(carDetector,"cars3.xml",R.raw.cars3);
+                    faceDetector = loadFile(faceDetector,"frontFace.xml", R.raw.haarcascade_frontalface_default);
+                    eyesDetector = loadFile(eyesDetector,"eye.xml",R.raw.haarcascade_eye);
+                    fullBodyDetector = loadFile(fullBodyDetector, "fullBody.xml",R.raw.haarcascade_fullbody);
                     mOpenCVCameraView.enableView();
+
                 } break;
                 default:
                 {
@@ -209,7 +228,6 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        final int viewMode = 2;
         int height = mGray.rows();
         int width = mGray.cols();
 
@@ -226,51 +244,52 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
 
         lines = new Mat();
 
-        switch (viewMode) {
+        if(laneDetection) {
+            // input frame has gray scale format
+            Imgproc.cvtColor(roiRgb, roiGray, Imgproc.COLOR_RGB2GRAY, 4);
+            Imgproc.equalizeHist(roiGray, roiGray);
+            Imgproc.blur(roiGray, roiGray, new Size(3, 3));
+            Imgproc.Canny(roiGray, roiGray, 50, 200);
 
-            case VIEW_MODE_LINES: // Uses Hough Lines
-                // input frame has gray scale format
-                Imgproc.cvtColor(roiRgb, roiGray, Imgproc.COLOR_RGB2GRAY, 4);
-                Imgproc.equalizeHist(roiGray, roiGray);
-                Imgproc.blur(roiGray, roiGray, new Size(3, 3));
-                Imgproc.Canny(roiGray, roiGray, 50, 200);
+            Imgproc.HoughLinesP(roiGray, lines, 1, Math.PI / 180, 25, 50, 20);
 
+            for (int x = 0; x < lines.cols(); x++) {
+                double[] vec = lines.get(0, x);
+                double x1 = vec[0],
+                        y1 = vec[1] + (height / 2),
+                        x2 = vec[2],
+                        y2 = vec[3] + (height / 2);
+                Point start = new Point(x1, y1);
+                Point end = new Point(x2, y2);
 
-                //element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, size, point);
-                //Imgproc.morphologyEx(mGray, mGray, Imgproc.MORPH_OPEN , element);
-
-                Imgproc.HoughLinesP(roiGray, lines, 1, Math.PI / 180, 25, 50, 20);
-
-                for (int x = 0; x < lines.cols(); x++) {
-                    double[] vec = lines.get(0, x);
-                    double x1 = vec[0],
-                            y1 = vec[1] + (height / 2),
-                            x2 = vec[2],
-                            y2 = vec[3] + (height / 2);
-                    Point start = new Point(x1, y1);
-                    Point end = new Point(x2, y2);
-
-                    double xDiff = start.x - end.x;
-                    double yDiff = start.y - end.y;
-                    angle = Math.toDegrees(Math.atan2(yDiff, xDiff));
-                    if (angle < 0.0) angle += 180;
-                    if (angle >= 10 && angle <= 170) {
-                        Imgproc.line(mRgba, start, end, new Scalar(255, 0, 0), 2);
-                    }
+                double xDiff = start.x - end.x;
+                double yDiff = start.y - end.y;
+                angle = Math.toDegrees(Math.atan2(yDiff, xDiff));
+                if (angle < 0.0) angle += 180;
+                if (angle >= 10 && angle <= 170) {
+                    Imgproc.line(mRgba, start, end, new Scalar(255, 0, 0), 2);
                 }
-                break;
-
-            case VIEW_MODE_OBJECT:
-            {
-                if (mJavaDetector != null)
-                    mJavaDetector.detectMultiScale(mGray, faces, 1.1, 2, 2, new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
-
-                Rect[] facesArray = faces.toArray();
-                for (int i = 0; i < facesArray.length; i++)
-                    Imgproc.rectangle(mRgba, facesArray[i].tl(), facesArray[i].br(), new Scalar(255,0,0,255), 3);
             }
-            break;
         }
+
+        if(vehicleDetection) {
+            if (carDetector != null)
+                carDetector.detectMultiScale(mGray, faces, 1.1, 2, 2, new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+
+            Rect[] facesArray = faces.toArray();
+            for (int i = 0; i < facesArray.length; i++)
+                Imgproc.rectangle(mRgba, facesArray[i].tl(), facesArray[i].br(), new Scalar(255, 0, 0, 255), 3);
+        }
+
+        if(faceDetection){
+            if (faceDetector != null)
+                faceDetector.detectMultiScale(mGray, faces, 1.1, 2, 2, new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+
+            Rect[] facesArray = faces.toArray();
+            for (int i = 0; i < facesArray.length; i++)
+                Imgproc.rectangle(mRgba, facesArray[i].tl(), facesArray[i].br(), new Scalar(255, 0, 0, 255), 3);
+        }
+
 
         return mRgba;
     }
