@@ -1,13 +1,12 @@
 package com.adas.adas;
 
-import android.nfc.Tag;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Surface;
 import android.view.SurfaceView;
-import android.view.View;
-import android.widget.Button;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
@@ -19,6 +18,47 @@ import org.opencv.core.Mat;
 
 
 public class MainActivity extends AppCompatActivity implements CvCameraViewListener2 {
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.video:
+                checkItem(item);
+                return true;
+            case R.id.image:
+                checkItem(item);
+                return true;
+            case R.id.vehicle_detection:
+                checkItem(item);
+                return true;
+            case R.id.lane_detection:
+                checkItem(item);
+                return true;
+            case R.id.people_detection:
+                checkItem(item);
+                return true;
+            case R.id.color_conversion:
+                checkItem(item);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public void checkItem(MenuItem item){
+        if (item.isChecked() == false)
+            item.setChecked(true);
+        else if(item.isChecked() == true)
+            item.setChecked(false);
+    }
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this){
         @Override
@@ -49,7 +89,6 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             Log.i(this.getClass().getSimpleName(), "  OpenCVLoader.initDebug(), working.");
         }*/
 
-
         mOpenCVCameraView = (JavaCameraView) findViewById(R.id.MainActivityCameraView);
         mOpenCVCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCVCameraView.setCvCameraViewListener(this);
@@ -61,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
 
     }
 
-    public void onDestory(){
+    public void onDestroy(){
         super.onDestroy();
         if(mOpenCVCameraView != null){
             mOpenCVCameraView.disableView();
