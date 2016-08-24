@@ -1,0 +1,44 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/camera_settings"
+        android:title="@string/camera_settings" >
+        <menu>
+            <item
+                android:id="@+id/video"
+                android:title="@string/video"
+                android:checkable="true"
+                ></item>
+            <item
+                android:id="@+id/image"
+                android:title="@string/image"
+                android:checkable="true"
+                ></item>
+        </menu>
+    </item>
+
+    <item android:id="@+id/computer_vision"
+        android:title="@string/computer_vision" >
+        <menu>
+            <item
+                android:id="@+id/vehicle_detection"
+                android:title="@string/vehicle_detection"
+                android:checkable="true"
+                ></item>
+            <item
+                android:id="@+id/lane_detection"
+                android:title="@string/lane_detection"
+                android:checkable="true"
+                ></item>
+            <item
+                android:id="@+id/people_detection"
+                android:title="@string/people_detection"
+                android:checkable="true"
+                ></item>
+            <item
+                android:id="@+id/color_conversion"
+                android:title="@string/color_conversion"
+                android:checkable="true"
+                ></item>
+        </menu>
+    </item>
+
+</menu>

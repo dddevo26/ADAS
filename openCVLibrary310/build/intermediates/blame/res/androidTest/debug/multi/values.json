@@ -1,10 +1,18 @@
 [
     {
+<<<<<<< HEAD
         "outputFile": "C:\\Users\\Jordan\\AndroidStudioProjects\\ADASAPP\\ADAS\\openCVLibrary310\\build\\intermediates\\res\\merged\\androidTest\\debug\\values\\values.xml",
         "map": []
     },
     {
         "outputFile": "C:\\home\\drew\\AndroidStudioProjects\\ADAS\\openCVLibrary310\\build\\intermediates\\res\\merged\\androidTest\\debug\\values\\values.xml",
+=======
+        "outputFile": "C:\\home\\drew\\AndroidStudioProjects\\ADAS\\openCVLibrary310\\build\\intermediates\\res\\merged\\androidTest\\debug\\values\\values.xml",
+        "map": []
+    },
+    {
+        "outputFile": "C:\\Users\\Jordan\\AndroidStudioProjects\\ADASAPP\\ADAS\\openCVLibrary310\\build\\intermediates\\res\\merged\\androidTest\\debug\\values\\values.xml",
+>>>>>>> 53ed7dc8fedfed5be286bc2f3bb159bd2d42ee59
         "map": []
     }
 ]
