@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">ADAS</string>
-    <string name="Buttontest">test button</string>
+    <string name="run_button">Run</string>
+    <string name="stop_button">Stop</string>
+    <string name="settings_button">Settings</string>
+    <string name="running_functions">Running Functions:</string>
 </resources>
