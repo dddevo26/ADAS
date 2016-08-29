@@ -119,36 +119,75 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.video:
-                checkItem(item);
-                return true;
+                if (checkItem(item) == false) {
+                    item.setChecked(true);
+                    return true;
+                }
+                else {
+                    item.setChecked(false);
+                    return true;
+                }
             case R.id.image:
-                checkItem(item);
-                return true;
+                if (checkItem(item) == false) {
+                    item.setChecked(true);
+                    return true;
+                }
+                else {
+                    item.setChecked(false);
+                    return true;
+                }
             case R.id.vehicle_detection:
-                vehicleDetection = true;
-                checkItem(item);
-                return true;
+                if (checkItem(item) == false) {
+                    item.setChecked(true);
+                    vehicleDetection = true;
+                    return true;
+                }
+                else {
+                    item.setChecked(false);
+                    vehicleDetection = false;
+                    return true;
+                }
             case R.id.lane_detection:
-                laneDetection = true;
-                checkItem(item);
-                return true;
+                if (checkItem(item) == false) {
+                    item.setChecked(true);
+                    laneDetection = true;
+                    return true;
+                }
+                else {
+                    item.setChecked(false);
+                    laneDetection = false;
+                    return true;
+                }
             case R.id.people_detection:
-                faceDetection = true;
-                checkItem(item);
-                return true;
+                if (checkItem(item) == false) {
+                    item.setChecked(true);
+                    faceDetection = true;
+                    return true;
+                }
+                else {
+                    item.setChecked(false);
+                    faceDetection = false;
+                    return true;
+                }
             case R.id.color_conversion:
-                checkItem(item);
-                return true;
+                if (checkItem(item) == false) {
+                    item.setChecked(true);
+                    return true;
+                }
+                else {
+                    item.setChecked(false);
+                    return true;
+                }
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    public void checkItem(MenuItem item){
+    public boolean checkItem(MenuItem item){
         if (item.isChecked() == false)
-            item.setChecked(true);
-        else if(item.isChecked() == true)
-            item.setChecked(false);
+            return false;
+        else
+            return true;
     }
 
 
